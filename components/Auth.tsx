@@ -11,6 +11,7 @@ import {
 import { doc, setDoc, getDoc } from 'firebase/firestore'; // 🔹 Firestore 操作を追加
 import { Button } from '@/components/ui/button';
 import Image from 'next/image'; // 追加
+import { FirebaseError } from 'firebase/app';
 
 export default function Auth({
   onLogin,
@@ -41,11 +42,20 @@ export default function Auth({
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       setUser(user);
-      await saveUserToFirestore(user); // 🔹 ログイン時にも Firestore に保存
+      await saveUserToFirestore(user);
       onLogin(user);
-      console.log('✅ ログイン成功:', user);
     } catch (error) {
-      console.error('❌ ログインエラー:', error);
+      if (error instanceof FirebaseError) {
+        if (error.code === 'auth/popup-blocked') {
+          alert(
+            'ポップアップがブロックされました。ブラウザの設定を確認してください。'
+          );
+        } else if (error.code === 'auth/popup-closed-by-user') {
+          // ユーザーが閉じた場合は何もしない
+        } else {
+          alert('ログインに失敗しました。もう一度お試しください。');
+        }
+      }
     }
   };
 
