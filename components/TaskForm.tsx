@@ -66,40 +66,58 @@ export default function TaskForm({
   };
 
   return (
-    <div className="mb-6 space-y-2">
-      <Input
-        type="text"
-        placeholder="タスク名"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-      <Textarea
-        placeholder="タスクの詳細 (オプション)"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
+    <form className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            タスク名
+          </label>
+          <input
+            type="text"
+            className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            placeholder="タスク名"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </div>
+        <Textarea
+          placeholder="タスクの詳細 (オプション)"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
 
-      {/* ✅ 優先度選択 UI */}
-      <Select onValueChange={setPriority} value={priority}>
-        <SelectTrigger className="w-full">優先度: {priority}</SelectTrigger>
-        <SelectContent>
-          <SelectItem value="high">🔥 高</SelectItem>
-          <SelectItem value="medium">⚡ 中</SelectItem>
-          <SelectItem value="low">🌱 低</SelectItem>
-        </SelectContent>
-      </Select>
+        {/* ✅ 優先度選択 UI */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            優先度
+          </label>
+          <Select onValueChange={setPriority} value={priority}>
+            <SelectTrigger className="w-full">優先度: {priority}</SelectTrigger>
+            <SelectContent>
+              <SelectItem value="high">🔥 高</SelectItem>
+              <SelectItem value="medium">⚡ 中</SelectItem>
+              <SelectItem value="low">🌱 低</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-      {/* ✅ 期限選択 UI */}
-      <Input
-        type="date"
-        value={dueDate}
-        onChange={(e) => setDueDate(e.target.value)}
-        className="w-full"
-      />
+        {/* ✅ 期限選択 UI */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            期限
+          </label>
+          <input
+            type="date"
+            className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+          />
+        </div>
 
-      <Button onClick={handleAddTask} disabled={loading} className="w-full">
-        {loading ? '追加中...' : 'タスクを追加'}
-      </Button>
-    </div>
+        <Button onClick={handleAddTask} disabled={loading} className="w-full">
+          {loading ? '追加中...' : 'タスクを追加'}
+        </Button>
+      </div>
+    </form>
   );
 }

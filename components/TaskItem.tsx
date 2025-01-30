@@ -167,12 +167,58 @@ export default function TaskItem({
             value={editDueDate}
             onChange={(e) => setEditDueDate(e.target.value)}
           />
+          <Select value={editPriority} onValueChange={setEditPriority}>
+            <SelectTrigger>
+              <span>優先度: {editPriority}</span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="high">高</SelectItem>
+              <SelectItem value="medium">中</SelectItem>
+              <SelectItem value="low">低</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex gap-2">
+            <Button onClick={handleUpdateTask}>保存</Button>
+            <Button variant="outline" onClick={() => setIsEditing(false)}>
+              キャンセル
+            </Button>
+          </div>
         </div>
       ) : (
         <div>
           <h2>{task.title}</h2>
           <p>{task.description}</p>
+          {task.dueDate && (
+            <p className={`text-sm ${isOverdue ? 'text-red-500' : ''}`}>
+              期限: {task.dueDate}
+            </p>
+          )}
+          <p className="text-sm">優先度: {task.priority}</p>
+          <div className="flex gap-2 mt-2">
+            <Button onClick={() => setIsEditing(true)}>編集</Button>
+            <Button onClick={handleToggleStatus}>
+              {task.status === 'todo' ? '完了' : '未完了'}
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteTask}>
+              削除
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowShare(true)}
+              disabled={!task.ownerId}
+            >
+              共有
+            </Button>
+          </div>
         </div>
+      )}
+
+      {showShare && (
+        <TaskShare
+          taskId={task.id}
+          ownerId={task.ownerId}
+          onClose={() => setShowShare(false)}
+        />
       )}
     </li>
   );

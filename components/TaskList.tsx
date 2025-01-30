@@ -44,15 +44,19 @@ export default function TaskList({
   }
 
   return (
-    <ul className="space-y-2">
+    <div className="grid gap-4">
       {tasks.map((task) => (
-        <TaskItem
+        <div
           key={task.id}
-          task={task}
-          onTaskUpdated={onTaskUpdated}
-          onTaskDeleted={onTaskDeleted}
-        />
+          className="transform transition-all duration-200 hover:scale-[1.01] bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700"
+        >
+          <TaskItem
+            task={task}
+            onTaskUpdated={onTaskUpdated}
+            onTaskDeleted={onTaskDeleted}
+          />
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }
