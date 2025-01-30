@@ -1,4 +1,4 @@
-'use client';
+'use client'; // 👈 **これを追加！**
 
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
@@ -14,7 +14,6 @@ import TaskForm from '@/components/TaskForm';
 import TaskList from '@/components/TaskList';
 import TaskFilter from '@/components/TaskFilter';
 import TaskSort from '@/components/TaskSort';
-import TaskSearch from '@/components/TaskSearch'; // 🔍 検索バーを追加
 import { Toaster } from '@/components/ui/toaster';
 import Auth from '@/components/Auth';
 import { useReminder } from '@/hooks/useReminder';
@@ -32,16 +31,14 @@ export default function Home() {
     }
   }, [filter, sortBy, searchQuery, user]);
 
-  // ⏰ 期限が近いタスクのリマインダーを通知
   useReminder(tasks);
 
   const fetchTasks = async () => {
     if (!user) return;
 
     try {
-      console.log('✅ Firestore からタスクを取得開始…');
-
-      // 🔹 ソート条件の適用
+      console.log('🔍 Firestore からタスクを取得開始…');
+      console.log('🔍 現在のユーザー UID:', user.uid); // ✅ 現在のユーザー UID を確認
       let orderField = 'createdAt';
       let orderDirection: 'asc' | 'desc' = 'desc';
 
@@ -53,13 +50,11 @@ export default function Home() {
         orderDirection = 'asc';
       }
 
-      // 🔹 自分のタスク取得
       const tasksQuery = query(
         collection(db, `users/${user.uid}/tasks`),
         orderBy(orderField, orderDirection)
       );
 
-      // 🔹 共有されたタスク取得
       const sharedTasksQuery = query(
         collectionGroup(db, 'tasks'),
         where('sharedWith', 'array-contains', user.uid),
@@ -71,40 +66,38 @@ export default function Home() {
         getDocs(sharedTasksQuery),
       ]);
 
-      const personalTasks = tasksSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const taskList = tasksSnapshot.docs.map((doc) => {
+        const data = doc.data();
+        console.log('📌 取得したタスク:', data);
+        return { id: doc.id, ...data };
+      });
 
-      const sharedTasks = sharedTasksSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const sharedTaskList = sharedTasksSnapshot.docs.map((doc) => {
+        const data = doc.data();
+        console.log('📌 取得した共有タスク:', data);
+        return { id: doc.id, ...data };
+      });
 
-      console.log('✅ Firestore から取得した自分のタスク:', personalTasks);
-      console.log('✅ Firestore から取得した共有タスク:', sharedTasks);
+      console.log('✅ Firestore から取得した自分のタスク:', taskList);
+      console.log('✅ Firestore から取得した共有タスク:', sharedTaskList);
 
-      let combinedTasks = [...personalTasks, ...sharedTasks];
+      let combinedTasks = [...taskList, ...sharedTaskList];
 
-      // 🔹 フィルター適用
       if (filter === 'todo') {
         combinedTasks = combinedTasks.filter((task) => task.status === 'todo');
       } else if (filter === 'done') {
         combinedTasks = combinedTasks.filter((task) => task.status === 'done');
       }
 
-      // 🔍 検索適用
       if (searchQuery) {
-        combinedTasks = combinedTasks.filter(
-          (task) =>
-            task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            task.description.toLowerCase().includes(searchQuery.toLowerCase())
+        combinedTasks = combinedTasks.filter((task) =>
+          task.title.toLowerCase().includes(searchQuery.toLowerCase())
         );
       }
 
       setTasks(combinedTasks);
     } catch (error) {
-      console.error('データ取得エラー:', error);
+      console.error('🔥 データ取得エラー:', error);
     }
   };
 
@@ -120,7 +113,6 @@ export default function Home() {
             <TaskFilter filter={filter} onFilterChange={setFilter} />
             <TaskSort onSortChange={setSortBy} />
           </div>
-          <TaskSearch onSearch={setSearchQuery} />
           <TaskList
             tasks={tasks}
             onTaskUpdated={fetchTasks}

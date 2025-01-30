@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,7 @@ interface Task {
   ownerId: string;
   priority: string;
   dueDate?: string;
+  sharedWith?: string[];
 }
 
 export default function TaskItem({
@@ -38,13 +39,33 @@ export default function TaskItem({
   ) => void;
   onTaskDeleted: (id: string) => void;
 }) {
+  console.log('📌 TaskItem.tsx に渡された task:', task);
+
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const [editDescription, setEditDescription] = useState(task.description);
   const [editDueDate, setEditDueDate] = useState(task.dueDate || '');
   const [editPriority, setEditPriority] = useState(task.priority);
   const [showShare, setShowShare] = useState(false);
+  const [isShared, setIsShared] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const currentUserUid = auth.currentUser?.uid;
+    const sharedWithList = task.sharedWith ?? []; // ✅ `undefined` の回避
+
+    console.log('📌 現在のユーザー UID:', currentUserUid);
+    console.log('📌 Task の sharedWith:', sharedWithList);
+
+    if (!task.sharedWith) {
+      console.warn(
+        '⚠️ Firestore に sharedWith フィールドがないタスクがあります:',
+        task.id
+      );
+    }
+
+    setIsShared(sharedWithList.includes(currentUserUid));
+  }, [task]);
 
   // 🔹 期限チェック
   const taskDueDate = task.dueDate ? new Date(task.dueDate) : null;
@@ -70,6 +91,7 @@ export default function TaskItem({
         description: editDescription,
         dueDate: editDueDate || null,
         priority: editPriority,
+        sharedWith: task.sharedWith ?? [], // ✅ `undefined` の場合は `[]` をセット
       });
 
       onTaskUpdated(
@@ -145,66 +167,12 @@ export default function TaskItem({
             value={editDueDate}
             onChange={(e) => setEditDueDate(e.target.value)}
           />
-
-          {/* ✅ 優先度選択 UI */}
-          <Select onValueChange={setEditPriority} value={editPriority}>
-            <SelectTrigger className="w-full">
-              優先度: {editPriority}
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="high">🔥 高</SelectItem>
-              <SelectItem value="medium">⚡ 中</SelectItem>
-              <SelectItem value="low">🌱 低</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <div className="flex gap-2">
-            <Button onClick={handleUpdateTask}>保存</Button>
-            <Button variant="secondary" onClick={() => setIsEditing(false)}>
-              キャンセル
-            </Button>
-          </div>
         </div>
       ) : (
-        <div className="flex justify-between items-center">
-          <div>
-            <h2
-              className={`text-lg font-semibold ${
-                task.status === 'done' ? 'line-through text-gray-500' : ''
-              }`}
-            >
-              {task.title}
-            </h2>
-            <p>{task.description}</p>
-            {taskDueDate && (
-              <p className={`text-sm ${isOverdue ? 'text-red-600' : ''}`}>
-                📅 期限: {taskDueDate.toLocaleDateString()}
-              </p>
-            )}
-            <p className="text-sm">🚀 優先度: {task.priority}</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleToggleStatus}>
-              {task.status === 'todo' ? '完了' : '未完了'}
-            </Button>
-            <Button variant="outline" onClick={() => setShowShare(!showShare)}>
-              共有
-            </Button>
-            <Button variant="outline" onClick={() => setIsEditing(true)}>
-              編集
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteTask}>
-              削除
-            </Button>
-          </div>
+        <div>
+          <h2>{task.title}</h2>
+          <p>{task.description}</p>
         </div>
-      )}
-      {showShare && (
-        <TaskShare
-          taskId={task.id}
-          ownerId={task.ownerId}
-          onTaskUpdated={onTaskUpdated}
-        />
       )}
     </li>
   );
