@@ -10,6 +10,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore'; // 🔹 Firestore 操作を追加
 import { Button } from '@/components/ui/button';
+import Image from 'next/image'; // 追加
 
 export default function Auth({
   onLogin,
@@ -25,13 +26,13 @@ export default function Auth({
 
       if (currentUser) {
         try {
-          await saveUserToFirestore(currentUser); // 🔹 Firestore にユーザーを保存
-          console.log('✅ Firestore にユーザー情報を保存しました');
+          await saveUserToFirestore(currentUser);
         } catch (error) {
-          console.error('❌ Firestore へのユーザー保存エラー:', error);
+          throw new Error(`Failed to save user to Firestore: ${error}`);
         }
       }
     });
+
     return () => unsubscribe();
   }, [onLogin]);
 
@@ -80,7 +81,7 @@ export default function Auth({
         console.log(`ℹ️ Firestore に既にユーザー ${user.uid} が存在しています`);
       }
     } catch (error) {
-      console.error('❌ Firestore へのユーザー保存エラー:', error);
+      throw new Error(`Failed to save user to Firestore: ${error}`);
     }
   };
 
@@ -88,11 +89,21 @@ export default function Auth({
     <div className="mb-4 flex justify-between items-center">
       {user ? (
         <div className="flex items-center gap-4">
-          <img
-            src={user.photoURL || ''}
-            alt="User Avatar"
-            className="w-10 h-10 rounded-full"
-          />
+          {user.photoURL ? (
+            <Image
+              src={user.photoURL}
+              alt="プロフィール画像"
+              width={40}
+              height={40}
+              className="rounded-full"
+              unoptimized
+              referrerPolicy="no-referrer" // Google画像のCORSエラー対策
+            />
+          ) : (
+            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+              {user.displayName?.[0] || '?'}
+            </div>
+          )}
           <span>{user.displayName}</span>
           <Button onClick={handleLogout}>ログアウト</Button>
         </div>

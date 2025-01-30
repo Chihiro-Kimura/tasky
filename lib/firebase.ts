@@ -15,12 +15,13 @@ const missingVars = Object.entries({
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-}).filter(([key, value]) => !value);
+}).filter(([value]) => !value);
 
 if (missingVars.length > 0) {
-  console.warn(
-    '⚠️ 環境変数が設定されていません:',
-    missingVars.map(([key]) => key)
+  throw new Error(
+    `Missing environment variables: ${missingVars
+      .map(([key]) => key)
+      .join(', ')}`
   );
 }
 
@@ -44,10 +45,8 @@ const auth = getAuth(app);
 (async () => {
   try {
     await setPersistence(auth, browserLocalPersistence);
-    console.log('✅ ログインの持続性: `LOCAL` 設定完了');
   } catch (error) {
-    alert(`⚠️ ログイン持続性の設定エラー: ${error.message}`);
-    console.error('⚠️ ログイン持続性の設定エラー:', error);
+    throw new Error(`Failed to set auth persistence: ${error}`);
   }
 })();
 

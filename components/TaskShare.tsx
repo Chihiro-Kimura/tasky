@@ -15,10 +15,12 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function TaskShare({
   taskId,
-  onTaskUpdated,
+  ownerId,
+  onClose,
 }: {
   taskId: string;
-  onTaskUpdated: (taskId: string) => void;
+  ownerId: string;
+  onClose: () => void;
 }) {
   const [email, setEmail] = useState('');
   const { toast } = useToast();
@@ -79,8 +81,8 @@ export default function TaskShare({
         return;
       }
 
-      const ownerId = taskData.ownerId;
-      console.log('タスクのオーナーID:', ownerId);
+      const ownerIdFromTask = taskData.ownerId;
+      console.log('タスクのオーナーID:', ownerIdFromTask);
 
       // 🔹 Firestore の正しいパスを参照
       const ownerTaskRef = doc(db, `users/${ownerId}/tasks`, taskId);
@@ -93,7 +95,7 @@ export default function TaskShare({
       toast({
         title: 'タスクを共有しました！',
       });
-      onTaskUpdated(taskId);
+      onClose();
     } catch (error) {
       console.error('タスク共有エラー:', error);
       toast({

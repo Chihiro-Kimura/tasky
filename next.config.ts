@@ -1,7 +1,9 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    domains: ['lh3.googleusercontent.com'], // Googleプロフィール画像のドメインを許可
+  },
 };
 
 export default nextConfig;

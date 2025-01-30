@@ -27,15 +27,15 @@ export default function TaskList({
   ) => void;
   onTaskDeleted: (id: string) => void;
 }) {
-  const currentUserUid = auth.currentUser?.uid;
+  const currentUserUid = auth.currentUser?.uid || '';
   console.log('📌 TaskList.tsx に渡された tasks:', tasks);
 
   tasks.forEach((task) => {
-    const sharedWithList = task.sharedWith ?? []; // ✅ `undefined` を回避
+    const sharedWithList = task.sharedWith ?? [];
     console.log(`📌 タスク (${task.id}) の sharedWith:`, sharedWithList);
     console.log(
       `🔍 ユーザー (${currentUserUid}) が sharedWith に含まれる？:`,
-      sharedWithList.includes(currentUserUid)
+      currentUserUid && sharedWithList.includes(currentUserUid)
     );
   });
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
 import {
   collection,
@@ -13,9 +13,11 @@ import { User } from 'firebase/auth';
 interface Task {
   id: string;
   title: string;
+  description: string;
   status: 'todo' | 'done';
-  priority: number;
-  dueDate: Date;
+  priority: string;
+  dueDate?: string;
+  ownerId: string;
   sharedWith?: string[];
 }
 
@@ -53,12 +55,10 @@ export const useTasks = (user: User | null) => {
     return filteredTasks;
   };
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     if (!user) return;
 
     setIsLoading(true);
-    setError(null);
-
     try {
       const { sortBy } = filter;
       const orderConfig = {
@@ -95,17 +95,16 @@ export const useTasks = (user: User | null) => {
       setTasks(filteredTasks);
     } catch (error) {
       setError(error as Error);
-      console.error('🔥 データ取得エラー:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, filter]);
 
   useEffect(() => {
     if (user) {
       fetchTasks();
     }
-  }, [filter, user]);
+  }, [user, fetchTasks]);
 
   return {
     tasks,

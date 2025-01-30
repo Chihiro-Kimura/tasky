@@ -47,7 +47,6 @@ export default function TaskItem({
   const [editDueDate, setEditDueDate] = useState(task.dueDate || '');
   const [editPriority, setEditPriority] = useState(task.priority);
   const [showShare, setShowShare] = useState(false);
-  const [isShared, setIsShared] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -63,8 +62,6 @@ export default function TaskItem({
         task.id
       );
     }
-
-    setIsShared(sharedWithList.includes(currentUserUid));
   }, [task]);
 
   // 🔹 期限チェック
