@@ -72,17 +72,24 @@ export default function TaskItem({
   const handleToggleStatus = async () => {
     try {
       const newStatus = task.status === 'todo' ? 'done' : 'todo';
-      const taskRef = doc(db, `users/${auth.currentUser?.uid}/tasks`, task.id);
 
-      await updateDoc(taskRef, { status: newStatus });
+      // ✅ Firestore の正しいパスを取得
+      const taskRef = doc(db, `users/${task.ownerId}/tasks`, task.id);
+
+      await updateDoc(taskRef, {
+        status: newStatus,
+      });
 
       onTaskUpdated(task.id, task.title, task.description);
+      toast({
+        title: 'ステータスを更新しました',
+      });
     } catch (error) {
+      console.error('ステータス更新エラー:', error);
       toast({
         title: 'ステータスの更新に失敗しました',
         variant: 'destructive',
       });
-      console.error('ステータス更新エラー:', error);
     }
   };
 
