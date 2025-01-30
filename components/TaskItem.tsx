@@ -4,6 +4,12 @@ import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import TaskShare from '@/components/TaskShare';
 
@@ -13,6 +19,7 @@ interface Task {
   description: string;
   status: string;
   ownerId: string;
+  priority: string;
   dueDate?: string;
 }
 
@@ -26,7 +33,8 @@ export default function TaskItem({
     id: string,
     title?: string,
     description?: string,
-    dueDate?: string
+    dueDate?: string,
+    priority?: string
   ) => void;
   onTaskDeleted: (id: string) => void;
 }) {
@@ -34,6 +42,7 @@ export default function TaskItem({
   const [editTitle, setEditTitle] = useState(task.title);
   const [editDescription, setEditDescription] = useState(task.description);
   const [editDueDate, setEditDueDate] = useState(task.dueDate || '');
+  const [editPriority, setEditPriority] = useState(task.priority);
   const [showShare, setShowShare] = useState(false);
   const { toast } = useToast();
 
@@ -59,10 +68,17 @@ export default function TaskItem({
       await updateDoc(taskRef, {
         title: editTitle,
         description: editDescription,
-        dueDate: editDueDate || null, // 🔹 空の場合は `null`
+        dueDate: editDueDate || null,
+        priority: editPriority,
       });
 
-      onTaskUpdated(task.id, editTitle, editDescription, editDueDate);
+      onTaskUpdated(
+        task.id,
+        editTitle,
+        editDescription,
+        editDueDate,
+        editPriority
+      );
       setIsEditing(false);
       toast({ title: 'タスクを更新しました' });
     } catch (error) {
@@ -90,7 +106,13 @@ export default function TaskItem({
 
       await updateDoc(taskRef, { status: newStatus });
 
-      onTaskUpdated(task.id, task.title, task.description, editDueDate);
+      onTaskUpdated(
+        task.id,
+        task.title,
+        task.description,
+        editDueDate,
+        editPriority
+      );
       toast({ title: 'ステータスを更新しました' });
     } catch (error) {
       console.error('ステータス更新エラー:', error);
@@ -123,6 +145,19 @@ export default function TaskItem({
             value={editDueDate}
             onChange={(e) => setEditDueDate(e.target.value)}
           />
+
+          {/* ✅ 優先度選択 UI */}
+          <Select onValueChange={setEditPriority} value={editPriority}>
+            <SelectTrigger className="w-full">
+              優先度: {editPriority}
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="high">🔥 高</SelectItem>
+              <SelectItem value="medium">⚡ 中</SelectItem>
+              <SelectItem value="low">🌱 低</SelectItem>
+            </SelectContent>
+          </Select>
+
           <div className="flex gap-2">
             <Button onClick={handleUpdateTask}>保存</Button>
             <Button variant="secondary" onClick={() => setIsEditing(false)}>
@@ -146,6 +181,7 @@ export default function TaskItem({
                 📅 期限: {taskDueDate.toLocaleDateString()}
               </p>
             )}
+            <p className="text-sm">🚀 優先度: {task.priority}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleToggleStatus}>

@@ -4,6 +4,12 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { User } from 'firebase/auth';
 
@@ -16,7 +22,8 @@ export default function TaskForm({
 }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState(''); // 🔹 期限用の state
+  const [priority, setPriority] = useState('medium'); // ✅ 優先度の state
+  const [dueDate, setDueDate] = useState(''); // ✅ 期限の state
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -35,17 +42,20 @@ export default function TaskForm({
       await addDoc(collection(db, `users/${user.uid}/tasks`), {
         title,
         description,
-        priority: 'medium',
-        dueDate: dueDate ? new Date(dueDate).toISOString() : null, // 🔹 Firestore に保存
+        priority, // ✅ 優先度を Firestore に保存
+        dueDate: dueDate ? new Date(dueDate).toISOString() : null, // ✅ 期限を Firestore に保存
         repeat: 'none',
         status: 'todo',
         ownerId: user.uid,
         createdAt: serverTimestamp(),
       });
 
+      // フォームのリセット
       setTitle('');
       setDescription('');
+      setPriority('medium');
       setDueDate('');
+
       onTaskAdded();
       toast({ title: 'タスクを追加しました' });
     } catch (error) {
@@ -68,12 +78,25 @@ export default function TaskForm({
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
+
+      {/* ✅ 優先度選択 UI */}
+      <Select onValueChange={setPriority} value={priority}>
+        <SelectTrigger className="w-full">優先度: {priority}</SelectTrigger>
+        <SelectContent>
+          <SelectItem value="high">🔥 高</SelectItem>
+          <SelectItem value="medium">⚡ 中</SelectItem>
+          <SelectItem value="low">🌱 低</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* ✅ 期限選択 UI */}
       <Input
         type="date"
         value={dueDate}
         onChange={(e) => setDueDate(e.target.value)}
         className="w-full"
       />
+
       <Button onClick={handleAddTask} disabled={loading} className="w-full">
         {loading ? '追加中...' : 'タスクを追加'}
       </Button>
