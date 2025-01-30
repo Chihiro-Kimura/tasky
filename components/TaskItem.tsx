@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { db, auth } from '@/lib/firebase';
+import { useEffect, useState } from 'react';
+import { db } from '@/lib/firebase';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,8 @@ interface Task {
   title: string;
   description: string;
   status: string;
-  ownerId: string; // 🔹 タスクの作成者情報を追加
+  ownerId: string;
+  dueDate?: string;
 }
 
 export default function TaskItem({
@@ -21,69 +22,76 @@ export default function TaskItem({
   onTaskDeleted,
 }: {
   task: Task;
-  onTaskUpdated: (id: string, title?: string, description?: string) => void;
+  onTaskUpdated: (
+    id: string,
+    title?: string,
+    description?: string,
+    dueDate?: string
+  ) => void;
   onTaskDeleted: (id: string) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const [editDescription, setEditDescription] = useState(task.description);
+  const [editDueDate, setEditDueDate] = useState(task.dueDate || '');
   const [showShare, setShowShare] = useState(false);
   const { toast } = useToast();
 
+  // 🔹 期限チェック
+  const taskDueDate = task.dueDate ? new Date(task.dueDate) : null;
+  const today = new Date();
+  const isToday =
+    taskDueDate && taskDueDate.toDateString() === today.toDateString();
+  const isOverdue = taskDueDate && taskDueDate < today;
+
+  useEffect(() => {
+    if (isToday) {
+      toast({
+        title: '📢 期限が今日のタスク！',
+        description: `「${task.title}」の締切が今日です！`,
+      });
+    }
+  }, [isToday, task.title, toast]);
+
   const handleUpdateTask = async () => {
     try {
-      const taskRef = doc(db, `users/${auth.currentUser?.uid}/tasks`, task.id);
+      const taskRef = doc(db, `users/${task.ownerId}/tasks`, task.id);
       await updateDoc(taskRef, {
         title: editTitle,
         description: editDescription,
+        dueDate: editDueDate || null, // 🔹 空の場合は `null`
       });
 
-      onTaskUpdated(task.id, editTitle, editDescription);
+      onTaskUpdated(task.id, editTitle, editDescription, editDueDate);
       setIsEditing(false);
-      toast({
-        title: 'タスクを更新しました',
-      });
+      toast({ title: 'タスクを更新しました' });
     } catch (error) {
       console.error('タスク更新エラー:', error);
-      toast({
-        title: 'タスクの更新に失敗しました',
-        variant: 'destructive',
-      });
+      toast({ title: 'タスクの更新に失敗しました', variant: 'destructive' });
     }
   };
 
   const handleDeleteTask = async () => {
     if (!confirm('このタスクを削除しますか？')) return;
     try {
-      await deleteDoc(doc(db, `users/${auth.currentUser?.uid}/tasks`, task.id));
+      await deleteDoc(doc(db, `users/${task.ownerId}/tasks`, task.id));
       onTaskDeleted(task.id);
-      toast({
-        title: 'タスクを削除しました',
-      });
+      toast({ title: 'タスクを削除しました' });
     } catch (error) {
       console.error('タスク削除エラー:', error);
-      toast({
-        title: 'タスクの削除に失敗しました',
-        variant: 'destructive',
-      });
+      toast({ title: 'タスクの削除に失敗しました', variant: 'destructive' });
     }
   };
 
   const handleToggleStatus = async () => {
     try {
       const newStatus = task.status === 'todo' ? 'done' : 'todo';
-
-      // ✅ Firestore の正しいパスを取得
       const taskRef = doc(db, `users/${task.ownerId}/tasks`, task.id);
 
-      await updateDoc(taskRef, {
-        status: newStatus,
-      });
+      await updateDoc(taskRef, { status: newStatus });
 
-      onTaskUpdated(task.id, task.title, task.description);
-      toast({
-        title: 'ステータスを更新しました',
-      });
+      onTaskUpdated(task.id, task.title, task.description, editDueDate);
+      toast({ title: 'ステータスを更新しました' });
     } catch (error) {
       console.error('ステータス更新エラー:', error);
       toast({
@@ -96,11 +104,11 @@ export default function TaskItem({
   return (
     <li
       className={`border p-4 rounded mb-2 flex flex-col gap-2 ${
-        task.status === 'done' ? 'bg-gray-200' : ''
+        task.status === 'done' ? 'bg-gray-200' : isOverdue ? 'bg-red-100' : ''
       }`}
     >
       {isEditing ? (
-        <div>
+        <div className="space-y-2">
           <Input
             type="text"
             value={editTitle}
@@ -110,7 +118,12 @@ export default function TaskItem({
             value={editDescription}
             onChange={(e) => setEditDescription(e.target.value)}
           />
-          <div className="flex gap-2 mt-2">
+          <Input
+            type="date"
+            value={editDueDate}
+            onChange={(e) => setEditDueDate(e.target.value)}
+          />
+          <div className="flex gap-2">
             <Button onClick={handleUpdateTask}>保存</Button>
             <Button variant="secondary" onClick={() => setIsEditing(false)}>
               キャンセル
@@ -128,6 +141,11 @@ export default function TaskItem({
               {task.title}
             </h2>
             <p>{task.description}</p>
+            {taskDueDate && (
+              <p className={`text-sm ${isOverdue ? 'text-red-600' : ''}`}>
+                📅 期限: {taskDueDate.toLocaleDateString()}
+              </p>
+            )}
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleToggleStatus}>

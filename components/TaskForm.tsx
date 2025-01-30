@@ -16,22 +16,17 @@ export default function TaskForm({
 }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [dueDate, setDueDate] = useState(''); // 🔹 期限用の state
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const handleAddTask = async () => {
     if (!user) {
-      toast({
-        title: 'ログインしてください',
-        variant: 'destructive',
-      });
+      toast({ title: 'ログインしてください', variant: 'destructive' });
       return;
     }
     if (!title) {
-      toast({
-        title: 'タスク名を入力してください',
-        variant: 'destructive',
-      });
+      toast({ title: 'タスク名を入力してください', variant: 'destructive' });
       return;
     }
 
@@ -41,7 +36,7 @@ export default function TaskForm({
         title,
         description,
         priority: 'medium',
-        dueDate: '2025-02-15T12:00:00Z',
+        dueDate: dueDate ? new Date(dueDate).toISOString() : null, // 🔹 Firestore に保存
         repeat: 'none',
         status: 'todo',
         ownerId: user.uid,
@@ -50,22 +45,18 @@ export default function TaskForm({
 
       setTitle('');
       setDescription('');
-      onTaskAdded(); // 親コンポーネントに追加完了を通知
-      toast({
-        title: 'タスクを追加しました',
-      });
+      setDueDate('');
+      onTaskAdded();
+      toast({ title: 'タスクを追加しました' });
     } catch (error) {
       console.error('タスク追加エラー:', error);
-      toast({
-        title: 'タスク追加に失敗しました',
-        variant: 'destructive',
-      });
+      toast({ title: 'タスク追加に失敗しました', variant: 'destructive' });
     }
     setLoading(false);
   };
 
   return (
-    <div className="mb-6">
+    <div className="mb-6 space-y-2">
       <Input
         type="text"
         placeholder="タスク名"
@@ -76,9 +67,14 @@ export default function TaskForm({
         placeholder="タスクの詳細 (オプション)"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        className="mt-2"
       />
-      <Button onClick={handleAddTask} disabled={loading} className="mt-2">
+      <Input
+        type="date"
+        value={dueDate}
+        onChange={(e) => setDueDate(e.target.value)}
+        className="w-full"
+      />
+      <Button onClick={handleAddTask} disabled={loading} className="w-full">
         {loading ? '追加中...' : 'タスクを追加'}
       </Button>
     </div>
